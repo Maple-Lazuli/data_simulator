@@ -38,7 +38,5 @@ class String(Format):
 
 
 class Unicode(String):
-    def __init__(self, data, endianess = 'be', size=-1, encoding='utf-8'):
-        String.__init__(data, endianess, size, encoding)
-
-
+    def __init__(self, data, endianess='be', size=-1, encoding='utf-8'):
+        String.__init__(self, data, endianess, size, encoding)
