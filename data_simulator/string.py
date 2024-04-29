@@ -1,8 +1,10 @@
 from data_simulator.format import Format
 
 
-def hex_dump(byte_array):
+def hex_dump(byte_array, endianess):
     str_array = [hex(b)[2:].zfill(2).upper() for b in byte_array]
+    if endianess == 'le':
+        str_array = str_array[::-1]
     return " ".join(str_array)
 
 
@@ -31,9 +33,7 @@ class String(Format):
 
     def get_hex_dump(self):
         byte_array = bytes(self.data, self.encoding)
-        dump = hex_dump(byte_array)
-        if self.endianess == 'le':
-            dump = dump[::-1]
+        dump = hex_dump(byte_array, self.endianess)
         return dump
 
 
