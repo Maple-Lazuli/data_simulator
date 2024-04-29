@@ -19,7 +19,7 @@ def convert_bytes(string, encoding, size):
 
 class String(Format):
     def __init__(self, data, endianess, size, encoding):
-        Format.__init__(data, endianess)
+        Format.__init__(self, data, endianess)
         self.size = size
         self.encoding = encoding
 
