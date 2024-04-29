@@ -13,7 +13,7 @@ class Integer(Format):
     def get_hex_dump(self):
         byte_array = self.get_bytes()
         hex_dump = [hex(b)[2:].zfill(2) for b in byte_array]
-        return " ".join(hex_dump)
+        return " ".join(hex_dump).upper()
 
 
 class S(Integer):
