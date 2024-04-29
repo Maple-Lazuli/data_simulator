@@ -1,15 +1,15 @@
 from data_simulator.link import Link, HexLink, ByteLink
 
 
-def hex_dump(byte_array, endianess='big'):
+def hex_dump(byte_array, endianess='be'):
     str_array = [hex(b)[2:].zfill(2).upper() for b in byte_array]
-    if endianess == 'little':
+    if endianess == 'le':
         str_array = str_array[::-1]
     return " ".join(str_array)
 
 
 class Format:
-    def __init__(self, data, endianess='big'):
+    def __init__(self, data, endianess='be'):
         self.data = data
         self.endianess = endianess
         self.bytes_buffer = None
