@@ -9,13 +9,9 @@ def hex_dump(byte_array, endianess='be'):
 
 
 class Format:
-    def __init__(self, data, endianess='be', comment=""):
+    def __init__(self, data, endianess='be'):
         self.data = data
         self.endianess = endianess
-        self.comment = comment
-
-    def update_comment(self, comment):
-        self.comment = comment
 
     def get_bytes(self):
         pass
@@ -37,3 +33,7 @@ class Format:
 
     def __repr__(self):
         return self.get_hex_dump()
+
+    def set_data(self, value):
+        self.data = value
+
