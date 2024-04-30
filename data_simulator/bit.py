@@ -5,11 +5,11 @@ from math import ceil
 class Bit(Format):
     def __init__(self, val, size, endianess='be'):
         Format.__init__(self, None, "big" if endianess == 'be' else 'little')
-        if type(val) == int:
-            self.bits = bin(val)[2:].zfill(size)
-        elif type(val) == str:
-            self.bits = val
         self.size = size
+        if val is not None:
+            self.set_data(val)
+        else:
+            self.data = None
 
     def get_bytes(self):
         return int(self.bits, 2).to_bytes(length=max(ceil(self.size / 8), 1), byteorder=self.endianess)
@@ -21,3 +21,9 @@ class Bit(Format):
 
     def __sub__(self, other):
         return Bit(self.bits + other.bits, self.size + other.size)
+
+    def set_data(self, value):
+        if type(value) == int:
+            self.bits = bin(value)[2:].zfill(self.size)
+        elif type(value) == str:
+            self.bits = value
