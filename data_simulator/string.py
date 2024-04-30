@@ -20,8 +20,8 @@ def convert_bytes(string, encoding, size):
 
 
 class String(Format):
-    def __init__(self, data, endianess, size, encoding, comment=""):
-        Format.__init__(self, data, endianess, comment)
+    def __init__(self, data, endianess, size, encoding):
+        Format.__init__(self, data, endianess)
         self.size = size
         self.encoding = encoding
 
@@ -38,5 +38,5 @@ class String(Format):
 
 
 class Unicode(String):
-    def __init__(self, data, endianess='be', size=-1, encoding='utf-8', comment=""):
-        String.__init__(self, data, endianess, size, encoding, comment)
+    def __init__(self, data, endianess='be', size=-1, encoding='utf-8'):
+        String.__init__(self, data, endianess, size, encoding)
