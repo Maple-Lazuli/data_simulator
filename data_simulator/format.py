@@ -9,11 +9,13 @@ def hex_dump(byte_array, endianess='be'):
 
 
 class Format:
-    def __init__(self, data, endianess='be'):
+    def __init__(self, data, endianess='be', comment=""):
         self.data = data
         self.endianess = endianess
-        self.bytes_buffer = None
-        self.str_buffer = None
+        self.comment = comment
+
+    def update_comment(self, comment):
+        self.comment = comment
 
     def get_bytes(self):
         pass
