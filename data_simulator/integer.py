@@ -2,8 +2,8 @@ from data_simulator.format import Format
 
 
 class Integer(Format):
-    def __init__(self, data, endianess='be', size=1, signed=False, comment=""):
-        Format.__init__(self, data,  "big" if endianess == 'be' else 'little', comment)
+    def __init__(self, data, endianess='be', size=1, signed=False):
+        Format.__init__(self, data,  "big" if endianess == 'be' else 'little')
         self.size = size
         self.signed = signed
 
@@ -17,12 +17,12 @@ class Integer(Format):
 
 
 class S(Integer):
-    def __init__(self, data, e='be', size=1, c=""):
+    def __init__(self, data, e='be', size=1):
         endian = "big" if e == 'be' else 'little'
-        Integer.__init__(self, data, endian, size, True, c)
+        Integer.__init__(self, data, endian, size, True)
 
 
 class U(Integer):
-    def __init__(self, data, e='be', size=1, c=""):
+    def __init__(self, data, e='be', size=1):
         endian = "big" if e == 'be' else 'little'
-        Integer.__init__(self, data, endian, size, False, c)
+        Integer.__init__(self, data, endian, size, False)
