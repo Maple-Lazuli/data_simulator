@@ -1,41 +1,87 @@
-from data_simulator.integer import U, S
-from data_simulator.string import Unicode
+from data_simulator.integer import Integer
+from data_simulator.string import String
+from data_simulator.bit import Bit
+from data_simulator.byte_array import ByteArray
+
 
 import yaml
 import os
+import random
 import re
 
-
-def get_component_from_spec(default_endian, spec):
-    comment = spec['id'] if 'id' in spec.keys() else ""
-    if "type" in spec.keys():
-        t = spec['type']
-        if t[0] == 'u':
-            size = get_size(t)
-            endian = get_endian(t) if get_endian(t) is not None else default_endian
-            return U(1, size, endian, comment)
-        if t[0] == 's':
-            size = get_size(t)
-            endian = get_endian(t) if get_endian(t) is not None else default_endian
-            return U(1, size, endian, comment)
+def get_max(size, signed):
+    if signed:
+        return int((2 ** (8 * size))/2 - 1)
     else:
-        # handle case when spec is not provided.
-        pass
+        return int((2 ** (8 * size)) - 1)
 
+def get_min(size, signed):
+    if signed:
+        return -1 * int((2 ** (8 * size))/2)
+    else:
+        return 0
 
-def process_spec(spec):
-    default_endian = spec['meta']['endian']
-    components = []
-    for comp in spec['seq']:
-        comp_t = comp['type']
-        if comp_t in spec['types']:
-            for sub_comp in spec['types'][comp_t]['seq']:
-                processed_field = get_component_from_spec(default_endian, sub_comp)
-                components.append(processed_field)
-        else:
-            processed_field = get_component_from_spec(default_endian, comp)
-            components.append(processed_field)
-    return components
+def get_random_byte_array(size):
+    ba = b''
+    for _ in range(size):
+        ba += int(random.randint(0,255)).to_bytes(length=1, byteorder='big')
+    return ba
+
+def get_random_bits(size):
+    bits = ""
+    for _ in range(size):
+        bits += '10'[random.randint(0,1)]
+    return bits
+
+def get_random_string(count):
+    letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
+    rtn_str = ""
+    for _ in range(count):
+        rtn_str += letters[random.randint(0, len(letters) - 1)]
+
+def get_random_int(contraint, size, signed):
+    min = None
+    max = None
+    must_be = None
+    any_of = None
+    none_of = None
+    if contraint is not None:
+        if type(contraint) == int:
+            must_be = contraint
+        elif 'eq' in contraint.keys():
+            must_be = contraint['eq']
+        if 'max' in contraint.keys():
+            max = contraint['max']
+        if 'min' in contraint.keys():
+            min = contraint['min']
+        if 'any-of' in contraint.keys():
+            any_of = contraint['any-of']
+        if 'none-of' in contraint.keys():
+            none_of = contraint['none_of']
+    if min is not None and max is not None:
+        return random.randint(min, max)
+    if min is not None:
+        return random.randint(min, get_max(size, signed))
+    if max is not None:
+        return random.randint(get_min(size, signed), max)
+    if must_be is not None:
+        return must_be
+    if any_of is not None:
+        return any_of[random.randint(0, len(any_of) - 1)]
+    if none_of is not None:
+        while True:
+            candidate = random.randint(get_min(size, signed), get_max(size, signed))
+            if candidate not in none_of:
+                return candidate
+
+    return random.randint(get_min(size, signed), get_max(size, signed))
+
+def read_spec(yaml_path):
+    if not os.path.exists(yaml_path):
+        raise Exception(f"{yaml_path} not found.")
+
+    with open(yaml_path) as file_in:
+        return yaml.safe_load(file_in)
 
 
 def get_size(t):
@@ -59,13 +105,12 @@ def get_endian(t):
 
 class Specification:
     def __init__(self, yaml_path):
-        if not os.path.exists(yaml_path):
-            raise Exception(f"{yaml_path} not found.")
-
-        with open(yaml_path) as file_in:
-            self.spec = yaml.safe_load(file_in)
-
-        self.components = process_spec(self.spec)
+        self.spec = read_spec(yaml_path)
+        self.enums = None
+        self.types = None
+        self.default_endian = None
+        self.fields = None
+        self.process_spec()
 
     def get_spec(self):
         return self.spec
@@ -74,5 +119,155 @@ class Specification:
         # return the repr of the individual components
         pass
 
-    def get_spec_components(self):
-        return self.components
+    def get_spec_fields(self):
+        return self.fields
+
+    def add_field(self, field):
+        self.fields.append(field)
+
+    def field_count(self):
+        return len(self.fields)
+
+    def process_spec(self):
+        self.default_endian = self.spec['meta']['endian']
+        self.enums = self.spec['enums']
+        self.types = self.spec['types']
+        self.process_seq(self.spec['seq'])
+
+    def get_field_value(self, key):
+        for f in self.fields:
+            if f.id == key:
+                if f.content.data is None:
+                    # call self generate data
+                    return f.content.data
+                else:
+                    return f.content.data
+
+    def get_field(self,key):
+        for f in self.fields:
+            if f.id == key:
+                return f
+
+    def process_seq(self, seq):
+        for field in seq:
+            if 'type' in field.keys():
+                if type(field['type']) == dict:
+                    # If the type is a switch case, choose a value for the reference field then
+                    # process the appropriate sequence.
+                    field_id = field['type']['switch-on']
+                    values = field['type']['cases'].keys()
+                    choice = random.randint(0, len(values) - 1)
+                    case_value = values[choice]
+                    if choice == (len(values) - 1):
+                        ref_field = self.get_field(field_id)
+                        ref_field.set_constraint({'none-of': [v for v in values[:-1]]})
+                        ref_field.assign_value()
+                    else:
+                        ref_field = self.get_field(field_id)
+                        ref_field.content.set_data(case_value)
+
+                    seq_type = field['type']['cases'][case_value]
+                    self.process_seq(self.types[seq_type])
+
+                elif field['type'] in self.types.keys():
+                    self.process_seq(self.types[seq['type']])
+                else:
+                    self.process_atomic_field(field)
+            else:
+                self.process_byte_array(field)
+
+    def process_atomic_field(self, field):
+        temp_field = Field()
+        temp_field.set_id(field['id'] if 'id' in field.keys() else "")
+        t = field['type']
+        temp_field.set_type(t)
+        if t.find('str') != 0:
+            temp_field.set_content(self.process_atomic_string(field))
+        elif t[0] == 'u':
+            temp_field.set_content(self.process_atomic_signed_int(field, False))
+        elif t[0] == 's':
+            temp_field.set_content(self.process_atomic_signed_int(field, True))
+        elif t[0] == 'b':
+            temp_field.set_content(self.process_atomic_bit(field))
+
+        if 'valid' in field.keys():
+            temp_field.set_constraint(field['valid'])
+        temp_field.set_position(self.field_count())
+        temp_field.assign_value()
+        self.add_field(temp_field)
+
+    def process_atomic_string(self, field):
+        if type(field['size']) == int:
+            size = field['size']
+        else:
+            size = self.get_field_value(key=field['size'])
+        if 'encoding' in field.keys():
+            encoding = field['encoding'].lower()
+        else:
+            encoding = 'utf-8'
+        return String(None, self.default_endian, size, encoding)
+
+    def process_atomic_signed_int(self, field, signed):
+        size = get_size(field['type'])
+        endian = get_endian(field['type']) if get_endian(field['type']) is not None else self.default_endian
+        return Integer(None, size, endian, signed=signed)
+
+    def process_atomic_bit(self, field):
+        size = get_size(field['type'])
+        return Bit(None, size)
+
+    def process_byte_array(self, field):
+        temp_field = Field()
+        temp_field.set_id(field['id'] if 'id' in field.keys() else "")
+        temp_field.set_type("BYTES")
+
+        if type(field['size']) == int:
+            size = field['size']
+        else:
+            size = self.get_field_value(key=field['size'])
+
+        content = ByteArray(None, endianess=self.default_endian, size=size)
+        temp_field.set_content(content)
+        temp_field.set_position(self.field_count())
+        self.add_field(temp_field)
+
+class Field:
+    def __init__(self):
+        self.content = None
+        self.contraint = None
+        self.position = None
+        self.id = None
+        self.type_literal = None
+        self.enum = None
+        self.exclusions = None
+
+    def set_id(self, value):
+        self.id = value
+
+    def set_type(self, value):
+        self.type_literal = value
+
+    def set_content(self, content):
+        self.content = content
+
+    def set_constraint(self, constraint):
+        self.constraint = constraint
+
+    def set_position(self, pos):
+        self.position = pos
+
+    def update_content_value(self, value):
+        self.content.data = value
+
+    def assign_value(self):
+        size = self.content.size
+        if type(self.content) == String:
+            self.content.set_data(get_random_string(size))
+        elif type(self.content) == Integer:
+            signed = self.content.signed
+            self.content.set_data(get_random_int(self.contraint, size, signed))
+        elif type(self.content) == ByteArray:
+            self.content.set_data(get_random_byte_array(size))
+        elif type(self.content) == Bit:
+            self.content.set_data(get_random_bits(size))
+
