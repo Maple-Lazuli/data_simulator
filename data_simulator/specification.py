@@ -3,41 +3,46 @@ from data_simulator.string import String
 from data_simulator.bit import Bit
 from data_simulator.byte_array import ByteArray
 
-
 import yaml
 import os
 import random
 import re
 
+
 def get_max(size, signed):
     if signed:
-        return int((2 ** (8 * size))/2 - 1)
+        return int((2 ** (8 * size)) / 2 - 1)
     else:
         return int((2 ** (8 * size)) - 1)
 
+
 def get_min(size, signed):
     if signed:
-        return -1 * int((2 ** (8 * size))/2)
+        return -1 * int((2 ** (8 * size)) / 2)
     else:
         return 0
+
 
 def get_random_byte_array(size):
     ba = b''
     for _ in range(size):
-        ba += int(random.randint(0,255)).to_bytes(length=1, byteorder='big')
+        ba += int(random.randint(0, 255)).to_bytes(length=1, byteorder='big')
     return ba
+
 
 def get_random_bits(size):
     bits = ""
     for _ in range(size):
-        bits += '10'[random.randint(0,1)]
+        bits += '10'[random.randint(0, 1)]
     return bits
+
 
 def get_random_string(count):
     letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
     rtn_str = ""
     for _ in range(count):
         rtn_str += letters[random.randint(0, len(letters) - 1)]
+
 
 def get_random_int(contraint, size, signed):
     min = None
@@ -75,6 +80,7 @@ def get_random_int(contraint, size, signed):
                 return candidate
 
     return random.randint(get_min(size, signed), get_max(size, signed))
+
 
 def read_spec(yaml_path):
     if not os.path.exists(yaml_path):
@@ -143,14 +149,18 @@ class Specification:
                 else:
                     return f.content.data
 
-    def get_field(self,key):
+    def get_field(self, key):
         for f in self.fields:
             if f.id == key:
                 return f
 
     def process_seq(self, seq):
         for field in seq:
-            if 'type' in field.keys():
+            if 'contains' in field.keys():
+                # TODO Add processing for contains constant types
+                pass
+
+            elif 'type' in field.keys():
                 if type(field['type']) == dict:
                     # If the type is a switch case, choose a value for the reference field then
                     # process the appropriate sequence.
@@ -169,9 +179,9 @@ class Specification:
                     seq_type = field['type']['cases'][case_value]
                     self.process_seq(self.types[seq_type])
 
-                elif field['type'] in self.types.keys():
+                elif field['type'] in self.types.keys(): # The type is a named sequence
                     self.process_seq(self.types[seq['type']])
-                else:
+                else: # The type is an atomic type of int, bit, or str
                     self.process_atomic_field(field)
             else:
                 self.process_byte_array(field)
@@ -231,10 +241,45 @@ class Specification:
         temp_field.set_position(self.field_count())
         self.add_field(temp_field)
 
+    def write_spec_to_file(self, file):
+        receipt = []
+        bit_buffer = None
+        with open(file, "wb") as file_out:
+            for field in self.fields:
+                if type(field) == Bit:
+                    if bit_buffer is None:
+                        bit_buffer = field
+                    else:
+                        bit_buffer = bit_buffer + field
+                else:
+                    if bit_buffer is not None:
+                        file_out.write(bit_buffer.get_bytes())
+                        receipt.append(bit_buffer.__repr__())
+                        bit_buffer = None
+                    file_out.write(field.get_bytes())
+                    receipt.append(field.__repr__())
+        return receipt
+
+    def get_hex_dump(self):
+        dumps = []
+        bit_buffer = None
+        for field in self.fields:
+            if type(field) == Bit:
+                if bit_buffer is None:
+                    bit_buffer = field
+                else:
+                    bit_buffer = bit_buffer + field
+            else:
+                if bit_buffer is not None:
+                    dumps.append(bit_buffer.get_hex_dump())
+                    bit_buffer = None
+                dumps.append(field.get_hex_dump())
+        return " ".join(dumps)
+
 class Field:
     def __init__(self):
         self.content = None
-        self.contraint = None
+        self.constraint = None
         self.position = None
         self.id = None
         self.type_literal = None
@@ -270,4 +315,3 @@ class Field:
             self.content.set_data(get_random_byte_array(size))
         elif type(self.content) == Bit:
             self.content.set_data(get_random_bits(size))
-
