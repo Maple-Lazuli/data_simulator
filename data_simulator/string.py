@@ -36,6 +36,9 @@ class String(Format):
         dump = hex_dump(byte_array, self.endianess)
         return dump
 
+    def __repr__(self):
+        return f'String({self.data},{self.endianess},{self.size},{self.encoding})'
+
 
 class Unicode(String):
     def __init__(self, data, endianess='be', size=-1, encoding='utf-8'):

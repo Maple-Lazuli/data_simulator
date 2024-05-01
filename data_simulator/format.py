@@ -32,7 +32,7 @@ class Format:
         return self.get_hex_dump()
 
     def __repr__(self):
-        return self.get_hex_dump()
+        return f'Format({self.data},{self.endianess})'
 
     def set_data(self, value):
         self.data = value

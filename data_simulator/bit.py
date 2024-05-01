@@ -5,6 +5,7 @@ from math import ceil
 class Bit(Format):
     def __init__(self, val, size, endianess='be'):
         Format.__init__(self, None, "big" if endianess == 'be' else 'little')
+        self.bits = None
         self.size = size
         if val is not None:
             self.set_data(val)
@@ -27,3 +28,6 @@ class Bit(Format):
             self.bits = bin(value)[2:].zfill(self.size)
         elif type(value) == str:
             self.bits = value
+
+    def __repr__(self):
+        return f"Bit({self.bits}{self.size}{self.endianess})"

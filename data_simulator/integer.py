@@ -15,6 +15,8 @@ class Integer(Format):
         hex_dump = [hex(b)[2:].zfill(2) for b in byte_array]
         return " ".join(hex_dump).upper()
 
+    def __repr__(self):
+        return f"Integer({self.data},{self.endianess},{self.size},{self.signed})"
 
 class S(Integer):
     def __init__(self, data, e='be', size=1):
