@@ -26,13 +26,13 @@ class String(Format):
         self.encoding = encoding
 
     def get_bytes(self):
-        byte_array = bytes(self.data, self.encoding)
+        byte_array = convert_bytes(self.data, self.encoding, self.size)
         if self.endianess == 'le':
             byte_array = byte_array[::-1]
         return byte_array
 
     def get_hex_dump(self):
-        byte_array = bytes(self.data, self.encoding)
+        byte_array = convert_bytes(self.data, self.encoding, self.size)
         dump = hex_dump(byte_array, self.endianess)
         return dump
 
