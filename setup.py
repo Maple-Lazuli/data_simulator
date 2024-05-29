@@ -1,6 +1,6 @@
 from setuptools import setup
 
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 DESCRIPTION = 'Framework for writing binary data in python'
 LONG_DESCRIPTION = 'Framework that allows the use of operatators, such as & or |, for chaining different datatypes together and allowing for easy writing.'
 

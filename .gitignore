@@ -5,3 +5,4 @@ notebooks/*
 */__pycache__/*
 dist/*
 datatype_writer.egg-info/*
+build/*
