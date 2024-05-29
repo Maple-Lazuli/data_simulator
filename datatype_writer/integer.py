@@ -3,7 +3,7 @@ from datatype_writer.format import Format
 
 class Integer(Format):
     def __init__(self, data, endianess='be', size=1, signed=False):
-        Format.__init__(self, data,  "big" if endianess == 'be' else 'little')
+        Format.__init__(self, data, "big" if endianess == 'be' else 'little')
         self.size = size
         self.signed = signed
 
@@ -18,13 +18,12 @@ class Integer(Format):
     def __repr__(self):
         return f"Integer({self.data},{self.endianess},{self.size},{self.signed})"
 
+
 class S(Integer):
     def __init__(self, data, e='be', size=1):
-        endian = "big" if e == 'be' else 'little'
-        Integer.__init__(self, data, endian, size, True)
+        Integer.__init__(self, data, e, size, True)
 
 
 class U(Integer):
     def __init__(self, data, e='be', size=1):
-        endian = "big" if e == 'be' else 'little'
-        Integer.__init__(self, data, endian, size, False)
+        Integer.__init__(self, data, e, size, False)
