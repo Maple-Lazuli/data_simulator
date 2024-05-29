@@ -31,3 +31,4 @@ class Bit(Format):
 
     def __repr__(self):
         return f"Bit({self.bits}{self.size}{self.endianess})"
+
